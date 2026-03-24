@@ -1,33 +1,124 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import {
+  House,
+  PlusCircle,
+  ScanLine,
+  History,
+  User,
+  BarChart3,
+} from "lucide-react-native";
+import { Colors } from "@/constants/colors";
+import { FinsightTabBarButton } from "@/components/ui/FinsightTabBarButton";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+const TAB_ICON_SIZE = 22;
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+/** Tab bar tooltips (web: hover; native: long-press) */
+const TAB_LABELS: Record<string, string> = {
+  home: "Home",
+  "add-expense": "Add",
+  scan: "Scan",
+  history: "History",
+  analytics: "Insights",
+  "profile/index": "Profile",
+};
 
+export default function TabsLayout() {
   return (
     <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarActiveTintColor: "#93C5FD",
+        tabBarInactiveTintColor: "#64748B",
+        tabBarHideOnKeyboard: true,
+        tabBarShowLabel: false,
+        tabBarButton: (props) => (
+          <FinsightTabBarButton
+            {...props}
+            tooltipLabel={TAB_LABELS[route.name] ?? ""}
+          />
+        ),
+        tabBarStyle: {
+          backgroundColor: "#0B1120",
+          borderTopColor: Colors.border,
+          borderTopWidth: 1,
+        },
+        tabBarItemStyle: {
+          justifyContent: "center",
+        },
+      })}
+    >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color }) => (
+            <House color={color} size={TAB_ICON_SIZE} />
+          ),
         }}
       />
+
       <Tabs.Screen
-        name="explore"
+        name="add-expense"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Add",
+          tabBarIcon: ({ color }) => (
+            <PlusCircle color={color} size={TAB_ICON_SIZE} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="scan"
+        options={{
+          title: "Scan",
+          tabBarIcon: ({ color }) => (
+            <ScanLine color={color} size={TAB_ICON_SIZE} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "History",
+          tabBarIcon: ({ color }) => (
+            <History color={color} size={TAB_ICON_SIZE} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="analytics"
+        options={{
+          title: "Analytics",
+          tabBarLabel: "Insights",
+          tabBarIcon: ({ color }) => (
+            <BarChart3 color={color} size={TAB_ICON_SIZE} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile/index"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <User color={color} size={TAB_ICON_SIZE} />
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile/finance"
+        options={{
+          href: null,
+        }}
+      />
+
+      <Tabs.Screen
+        name="profile/emi"
+        options={{
+          href: null,
         }}
       />
     </Tabs>

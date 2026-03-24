@@ -1,0 +1,26 @@
+/** Finsight premium dark palette — use across screens for consistency */
+export const Colors = {
+  primary: "#2563EB",
+  primaryDark: "#1D4ED8",
+  accentTeal: "#2DD4BF",
+  background: "#050A16",
+  /** Glass-style surface */
+  card: "rgba(15, 23, 42, 0.62)",
+  text: "#E6EEFF",
+  mutedText: "#8FA2CC",
+  border: "rgba(125, 147, 188, 0.24)",
+  inputSurface: "rgba(15, 23, 42, 0.85)",
+  separator: "rgba(125, 147, 188, 0.18)",
+  success: "#16A34A",
+  danger: "#DC2626",
+  errorSurface: "rgba(127, 29, 29, 0.4)",
+  errorBorder: "rgba(252, 165, 165, 0.45)",
+  errorTextStrong: "#FEE2E2",
+  errorText: "#FECACA",
+  successSurface: "rgba(22, 101, 52, 0.35)",
+  successBorder: "rgba(74, 222, 128, 0.35)",
+  successText: "#BBF7D0",
+  warningSurface: "rgba(120, 53, 15, 0.4)",
+  warningBorder: "rgba(251, 191, 36, 0.4)",
+  warningText: "#FDE68A",
+};
