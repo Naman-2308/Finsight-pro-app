@@ -212,7 +212,7 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 18,
+    padding: 20,
     paddingBottom: 36,
   },
   header: {

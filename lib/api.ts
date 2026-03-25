@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getToken } from "@/lib/auth";
+import { getToken } from "./auth";
 
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:5000/api";

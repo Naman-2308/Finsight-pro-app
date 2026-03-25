@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   container: {
     position: "relative",
-    padding: 18,
+    padding: 20,
     paddingBottom: 54,
   },
   ambientOrbPrimary: {
