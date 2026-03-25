@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ScrollView,
 } from "react-native";
 import { Link, router, type Href } from "expo-router";
 import { Colors } from "@/constants/colors";
@@ -54,65 +55,81 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.shell}>
         <AmbientBackground />
+
         <KeyboardAvoidingView
-          style={styles.container}
+          style={styles.wrapper}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
-          <FadeIn>
-            <View style={styles.topSection}>
-              <Text style={styles.brand}>Finsight</Text>
-              <Text style={styles.title}>Welcome back</Text>
-              <Text style={styles.subtitle}>
-                Sign in to manage your expenses and scan receipts easily.
-              </Text>
-            </View>
-
-            <View style={styles.card}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Enter your email"
-              placeholderTextColor={Colors.mutedText}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              style={styles.input}
-              {...darkInputProps}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              value={password}
-              onChangeText={setPassword}
-              placeholder="Enter your password"
-              placeholderTextColor={Colors.mutedText}
-              secureTextEntry
-              style={styles.input}
-              {...darkInputProps}
-            />
-          </View>
-
-          <Pressable
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
+          <ScrollView
+            contentContainerStyle={styles.container}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.buttonText}>
-              {loading ? "Signing in..." : "Sign In"}
-            </Text>
-          </Pressable>
+            <FadeIn>
+              <View style={styles.topSection}>
+                <Text style={styles.brand}>Finsight</Text>
+                <Text style={styles.title}>Welcome back</Text>
+                <Text style={styles.subtitle}>
+                  Sign in to manage your expenses and scan receipts easily.
+                </Text>
+              </View>
 
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Don&apos;t have an account?</Text>
-            <Link href={"/signup" as Href} style={styles.link}>
-              Sign Up
-            </Link>
-          </View>
-            </View>
-          </FadeIn>
+              <View style={styles.card}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={setEmail}
+                    placeholder="Enter your email"
+                    placeholderTextColor={Colors.mutedText}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="email"
+                    textContentType="emailAddress"
+                    style={styles.input}
+                    {...darkInputProps}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    value={password}
+                    onChangeText={setPassword}
+                    placeholder="Enter your password"
+                    placeholderTextColor={Colors.mutedText}
+                    secureTextEntry
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="password"
+                    textContentType="password"
+                    style={styles.input}
+                    {...darkInputProps}
+                  />
+                </View>
+
+                <Pressable
+                  style={[styles.button, loading && styles.buttonDisabled]}
+                  onPress={handleLogin}
+                  disabled={loading}
+                >
+                  <Text style={styles.buttonText}>
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Text>
+                </Pressable>
+
+                <View style={styles.footerRow}>
+                  <Text style={styles.footerText}>
+                    Don&apos;t have an account?
+                  </Text>
+                  <Link href={"/signup" as Href} style={styles.link}>
+                    Sign Up
+                  </Link>
+                </View>
+              </View>
+            </FadeIn>
+          </ScrollView>
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>
@@ -128,10 +145,14 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  container: {
+  wrapper: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
     justifyContent: "center",
     paddingHorizontal: 20,
+    paddingVertical: 32,
   },
   topSection: {
     marginBottom: 28,

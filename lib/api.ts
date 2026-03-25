@@ -1,8 +1,11 @@
 import axios from "axios";
 import { getToken } from "@/lib/auth";
 
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:5000/api";
+
 export const api = axios.create({
-  baseURL: "http://127.0.0.1:5000/api",
+  baseURL: API_URL,
   timeout: 30000,
 });
 

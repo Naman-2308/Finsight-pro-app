@@ -1,17 +1,19 @@
 {
   "expo": {
-    "name": "finsight-mobile",
-    "slug": "finsight-mobile",
+    "name": "Finsight Pro",
+    "slug": "finsight-pro-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "finsightmobile",
+    "scheme": "finsightpro",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.namanjain.finsightpro"
     },
     "android": {
+      "package": "com.namanjain.finsightpro",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -43,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9e436b6b-8c03-4ba0-a9f5-b5ca5d2b7cb8"
+      }
     }
   }
 }
