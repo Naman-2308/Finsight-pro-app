@@ -298,7 +298,7 @@ export default function ScanScreen() {
 
 const styles = StyleSheet.create({
   content: {
-    padding: 20,
+    padding: 25,
     paddingBottom: 40,
   },
   helperText: {
