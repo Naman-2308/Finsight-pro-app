@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Colors } from "@/constants/colors";
+import { Spacing } from "@/constants/spacing";
 import {
   getSummary,
   getExpenses,
@@ -22,7 +23,8 @@ import {
   type FinanceOverview,
   type EmiOverview,
 } from "@/services/expenseService";
-import { getCachedAIAdvice, setCachedAIAdvice } from "@/lib/aiCache";
+import { useAiAdvice } from "@/hooks/use-ai-advice";
+import { parseBulletedLines } from "@/lib/text";
 import HomeHeader from "@/components/home/HomeHeader";
 import HeroSummaryCard from "@/components/home/HeroSummaryCard";
 import StatCardsRow from "@/components/home/StatCardsRow";
@@ -31,23 +33,15 @@ import BudgetHealthCard from "@/components/home/BudgetHealthCard";
 import EmiLoadCard from "@/components/home/EmiLoadCard";
 import AiQuickInsightCard from "@/components/home/AiQuickInsightCard";
 import RecentExpensesList from "@/components/home/RecentExpensesList";
-
-function parseAdvice(advice: string) {
-  return advice
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/^[-*•]\s*/, ""))
-    .filter(Boolean);
-}
+import TitledCardSection from "@/components/ui/TitledCardSection";
 
 export default function HomeScreen() {
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [finance, setFinance] = useState<FinanceOverview | null>(null);
   const [emiOverview, setEmiOverview] = useState<EmiOverview | null>(null);
-  const [aiAdvice, setAiAdvice] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
+  const { advice: aiAdvice, loading: aiLoading, refresh: refreshAiAdvice } =
+    useAiAdvice(getAIAdvice);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,32 +52,6 @@ export default function HomeScreen() {
   ).current;
   const ambientPulse = useRef(new Animated.Value(0)).current;
   const scrollY = useRef(new Animated.Value(0)).current;
-
-  const loadAIAdvice = useCallback(async () => {
-    try {
-      setAiLoading(true);
-
-      const cached = await getCachedAIAdvice();
-      if (cached) {
-        setAiAdvice(cached);
-        return;
-      }
-
-      const aiData = await getAIAdvice();
-      const advice = aiData?.advice || "";
-
-      setAiAdvice(advice);
-
-      if (advice) {
-        await setCachedAIAdvice(advice);
-      }
-    } catch {
-      // Do not fail screen because of AI
-      setAiAdvice("");
-    } finally {
-      setAiLoading(false);
-    }
-  }, []);
 
   const loadHomeData = useCallback(async (silent = false) => {
     try {
@@ -113,7 +81,7 @@ export default function HomeScreen() {
         .then((data) => setEmiOverview(data))
         .catch(() => setEmiOverview(null));
 
-      loadAIAdvice();
+      refreshAiAdvice();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dashboard";
@@ -122,7 +90,7 @@ export default function HomeScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [loadAIAdvice]);
+  }, [refreshAiAdvice]);
 
   useFocusEffect(
     useCallback(() => {
@@ -169,7 +137,7 @@ export default function HomeScreen() {
   }, [ambientPulse, sectionAnims]);
 
   const firstAdvice = useMemo(() => {
-    const points = parseAdvice(aiAdvice);
+    const points = parseBulletedLines(aiAdvice);
     return points[0] || "";
   }, [aiAdvice]);
 
@@ -320,27 +288,31 @@ export default function HomeScreen() {
         </Animated.View>
 
         <Animated.View style={getAnimatedSectionStyle(5)}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Budget Health</Text>
-            <Text style={styles.sectionSubtitle}>Spending stability score</Text>
-          </View>
-          <View style={styles.glassCard}>
+          <TitledCardSection
+            title="Budget Health"
+            subtitle="Spending stability score"
+            cardStyle={styles.sectionCard}
+          >
             <BudgetHealthCard finance={finance} />
-          </View>
+          </TitledCardSection>
         </Animated.View>
 
         <Animated.View style={getAnimatedSectionStyle(6)}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>EMI Load</Text>
-            <Text style={styles.sectionSubtitle}>Debt pressure check</Text>
-          </View>
-          <View style={styles.glassCard}>
+          <TitledCardSection
+            title="EMI Load"
+            subtitle="Debt pressure check"
+            cardStyle={styles.sectionCard}
+          >
             <EmiLoadCard emiOverview={emiOverview} />
-          </View>
+          </TitledCardSection>
         </Animated.View>
 
         <Animated.View style={getAnimatedSectionStyle(7)}>
-          <View style={styles.glassCard}>
+          <TitledCardSection
+            title="AI Insight"
+            subtitle="One actionable suggestion"
+            cardStyle={styles.sectionCard}
+          >
             <AiQuickInsightCard
               insight={
                 aiLoading
@@ -349,7 +321,7 @@ export default function HomeScreen() {
                     "Add more finance data and expenses to generate smarter AI insights."
               }
             />
-          </View>
+          </TitledCardSection>
           <View style={styles.recentExpensesWrapper}>
             <RecentExpensesList
               expenses={recentExpenses}
@@ -395,7 +367,7 @@ const styles = StyleSheet.create({
   },
   container: {
     position: "relative",
-    padding: 25,
+    padding: Spacing.xl,
     paddingBottom: 54,
   },
   ambientOrbPrimary: {
@@ -418,39 +390,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#1D4ED8",
     zIndex: 0,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-    marginTop: 16,
-  },
-  sectionTitle: {
-    color: "#E6EEFF",
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 0.2,
-  },
-  sectionSubtitle: {
-    color: "#8FA2CC",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  glassCard: {
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "rgba(125, 147, 188, 0.24)",
-    padding: 10,
-    marginBottom: 8,
-    shadowColor: "#020617",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.35,
-    shadowRadius: 26,
-    elevation: 10,
+  sectionCard: {
+    marginBottom: Spacing.xs,
   },
   recentExpensesWrapper: {
-    marginTop: 10,
+    marginTop: Spacing.sm,
   },
   errorCard: {
     backgroundColor: "rgba(127, 29, 29, 0.48)",

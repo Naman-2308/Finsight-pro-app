@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
+import { Spacing } from "@/constants/spacing";
 
 interface Props {
   title: string;
@@ -24,8 +25,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10,
-    marginTop: 8,
+    marginBottom: Spacing.sm,
+    marginTop: Spacing.xs,
   },
   titleBlock: {
     flexDirection: "row",
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
     height: 18,
     borderRadius: 2,
     backgroundColor: Colors.accentTeal,
-    marginRight: 10,
+    marginRight: Spacing.sm,
   },
   title: {
     color: Colors.text,

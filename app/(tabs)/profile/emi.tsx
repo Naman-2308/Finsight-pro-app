@@ -1,65 +1,47 @@
-import { useCallback, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-  Platform,
-} from "react-native";
+import { useCallback } from "react";
+import { View, Text, TextInput, StyleSheet, ActivityIndicator, Pressable } from "react-native";
 import { useFocusEffect } from "expo-router";
-import {
-  createEmi,
-  getEmis,
-  deleteEmi,
-  getEmiOverview,
-  type Emi,
-  type EmiOverview,
-} from "@/services/expenseService";
-import { Colors } from "@/constants/colors";
-import { darkInputProps } from "@/constants/inputProps";
 import ScreenContainer from "@/components/ui/ScreenContainer";
+import AppCard from "@/components/ui/AppCard";
+import EmptyState from "@/components/ui/EmptyState";
+import InlineMessage from "@/components/ui/InlineMessage";
+import PrimaryButton from "@/components/ui/PrimaryButton";
+import SectionHeader from "@/components/ui/SectionHeader";
+import { Colors } from "@/constants/colors";
+import { Radius } from "@/constants/radius";
+import { Spacing } from "@/constants/spacing";
+import { darkInputProps } from "@/constants/inputProps";
+import { useEmiManager } from "@/hooks/use-emi-manager";
+import { formatCurrencyINR } from "@/lib/formatters";
+import { confirmDestructive } from "@/lib/confirm";
 
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+function getRiskColor(riskLevel: string) {
+  if (riskLevel === "High") return Colors.danger;
+  if (riskLevel === "Moderate") return "#D97706";
+  return Colors.success;
 }
 
 export default function EmiScreen() {
-  const [title, setTitle] = useState("");
-  const [monthlyAmount, setMonthlyAmount] = useState("");
-  const [remainingMonths, setRemainingMonths] = useState("");
-  const [interestRate, setInterestRate] = useState("");
-
-  const [emis, setEmis] = useState<Emi[]>([]);
-  const [overview, setOverview] = useState<EmiOverview | null>(null);
-
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      const [emiList, emiOverview] = await Promise.all([
-        getEmis(),
-        getEmiOverview(),
-      ]);
-
-      setEmis(emiList);
-      setOverview(emiOverview);
-    } catch {
-      setEmis([]);
-      setOverview(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const {
+    title,
+    setTitle,
+    monthlyAmount,
+    setMonthlyAmount,
+    remainingMonths,
+    setRemainingMonths,
+    interestRate,
+    setInterestRate,
+    emis,
+    overview,
+    loading,
+    saving,
+    deletingId,
+    successMessage,
+    errorMessage,
+    loadData,
+    addEmi,
+    removeEmi,
+  } = useEmiManager();
 
   useFocusEffect(
     useCallback(() => {
@@ -67,102 +49,14 @@ export default function EmiScreen() {
     }, [loadData])
   );
 
-  function resetForm() {
-    setTitle("");
-    setMonthlyAmount("");
-    setRemainingMonths("");
-    setInterestRate("");
-  }
-
-  async function handleAddEmi() {
-    setSuccessMessage("");
-    setErrorMessage("");
-
-    if (!title.trim() || !monthlyAmount.trim() || !remainingMonths.trim()) {
-      setErrorMessage(
-        "Please fill title, monthly amount, and remaining months."
-      );
-      return;
+  async function handleDelete(id: string, emiTitle: string) {
+    const ok = await confirmDestructive(
+      "Delete EMI",
+      `Are you sure you want to delete "${emiTitle}"?`
+    );
+    if (ok) {
+      await removeEmi(id);
     }
-
-    const amountNum = Number(monthlyAmount);
-    const monthsNum = Number(remainingMonths);
-    const rateNum = interestRate.trim() ? Number(interestRate) : 0;
-
-    if (!Number.isFinite(amountNum) || amountNum <= 0) {
-      setErrorMessage("Please enter a valid monthly EMI amount.");
-      return;
-    }
-
-    if (!Number.isFinite(monthsNum) || monthsNum <= 0) {
-      setErrorMessage("Please enter valid remaining months.");
-      return;
-    }
-
-    if (!Number.isFinite(rateNum) || rateNum < 0) {
-      setErrorMessage("Please enter a valid interest rate.");
-      return;
-    }
-
-    try {
-      setSaving(true);
-
-      await createEmi({
-        title: title.trim(),
-        monthlyAmount: amountNum,
-        remainingMonths: monthsNum,
-        interestRate: rateNum,
-      });
-
-      resetForm();
-      setSuccessMessage("EMI added successfully.");
-      await loadData();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to add EMI.";
-      setErrorMessage(message);
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleDeleteEmi(id: string) {
-    try {
-      setDeletingId(id);
-      setSuccessMessage("");
-      setErrorMessage("");
-
-      await deleteEmi(id);
-
-      setSuccessMessage("EMI deleted successfully.");
-      await loadData();
-    } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Failed to delete EMI.";
-      setErrorMessage(message);
-    } finally {
-      setDeletingId(null);
-    }
-  }
-
-  function confirmDelete(id: string, emiTitle: string) {
-    if (Platform.OS === "web") {
-      const confirmed = window.confirm(
-        `Are you sure you want to delete "${emiTitle}"?`
-      );
-      if (confirmed) {
-        handleDeleteEmi(id);
-      }
-      return;
-    }
-
-    Alert.alert("Delete EMI", `Delete "${emiTitle}"?`, [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: () => handleDeleteEmi(id),
-      },
-    ]);
   }
 
   return (
@@ -172,8 +66,8 @@ export default function EmiScreen() {
         Add your monthly EMIs to measure repayment burden and improve AI advice.
       </Text>
 
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Add EMI</Text>
+      <AppCard style={styles.card}>
+        <SectionHeader title="Add EMI" />
 
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Title</Text>
@@ -226,132 +120,93 @@ export default function EmiScreen() {
           />
         </View>
 
-        {errorMessage ? (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>{errorMessage}</Text>
-          </View>
-        ) : null}
+        <InlineMessage type="error" message={errorMessage} />
+        <InlineMessage type="success" message={successMessage} />
 
-        {successMessage ? (
-          <View style={styles.successBox}>
-            <Text style={styles.successText}>{successMessage}</Text>
-          </View>
-        ) : null}
-
-        <Pressable
-          style={[styles.button, saving && styles.buttonDisabled]}
-          onPress={handleAddEmi}
+        <PrimaryButton
+          title={saving ? "Adding EMI..." : "Add EMI"}
+          onPress={addEmi}
           disabled={saving}
-        >
-          <Text style={styles.buttonText}>
-            {saving ? "Adding EMI..." : "Add EMI"}
-          </Text>
-        </Pressable>
-      </View>
+        />
+      </AppCard>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>EMI Overview</Text>
-
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : overview ? (
-          <View style={styles.card}>
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Total Monthly EMI</Text>
-              <Text style={styles.overviewValue}>
-                {formatCurrency(overview.totalMonthlyEMI)}
-              </Text>
-            </View>
-
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Monthly Salary</Text>
-              <Text style={styles.overviewValue}>
-                {formatCurrency(overview.monthlySalary)}
-              </Text>
-            </View>
-
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>EMI Burden</Text>
-              <Text style={styles.overviewValue}>
-                {overview.emiBurdenPercentage}%
-              </Text>
-            </View>
-
-            <View style={styles.overviewRow}>
-              <Text style={styles.overviewLabel}>Risk Level</Text>
-              <Text
-                style={[
-                  styles.overviewValue,
-                  overview.riskLevel === "High" && styles.riskHigh,
-                  overview.riskLevel === "Moderate" && styles.riskModerate,
-                  overview.riskLevel === "Low" && styles.riskLow,
-                ]}
-              >
-                {overview.riskLevel}
-              </Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              No EMI overview available yet. Add at least one EMI to see burden
-              analysis.
+      <SectionHeader title="EMI Overview" />
+      {loading ? (
+        <AppCard style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </AppCard>
+      ) : overview ? (
+        <AppCard style={styles.card}>
+          <View style={styles.overviewRow}>
+            <Text style={styles.overviewLabel}>Total Monthly EMI</Text>
+            <Text style={styles.overviewValue}>
+              {formatCurrencyINR(overview.totalMonthlyEMI)}
             </Text>
           </View>
-        )}
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Your EMIs</Text>
-
-        {loading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color={Colors.primary} />
-          </View>
-        ) : emis.length === 0 ? (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>
-              No EMIs added yet. Start by adding your first EMI above.
+          <View style={styles.overviewRow}>
+            <Text style={styles.overviewLabel}>Monthly Salary</Text>
+            <Text style={styles.overviewValue}>
+              {formatCurrencyINR(overview.monthlySalary)}
             </Text>
           </View>
-        ) : (
-          emis.map((emi) => {
-            const isDeleting = deletingId === emi._id;
+          <View style={styles.overviewRow}>
+            <Text style={styles.overviewLabel}>EMI Burden</Text>
+            <Text style={styles.overviewValue}>{overview.emiBurdenPercentage}%</Text>
+          </View>
+          <View style={styles.overviewRowLast}>
+            <Text style={styles.overviewLabel}>Risk Level</Text>
+            <Text
+              style={[styles.overviewValue, { color: getRiskColor(overview.riskLevel) }]}
+            >
+              {overview.riskLevel}
+            </Text>
+          </View>
+        </AppCard>
+      ) : (
+        <EmptyState message="No EMI overview available yet. Add at least one EMI to see burden analysis." />
+      )}
 
-            return (
-              <View key={emi._id} style={styles.emiCard}>
-                <View style={styles.emiInfo}>
-                  <Text style={styles.emiTitle}>{emi.title}</Text>
-                  <Text style={styles.emiMeta}>
-                    {formatCurrency(emi.monthlyAmount)} / month
-                  </Text>
-                  <Text style={styles.emiMeta}>
-                    {emi.remainingMonths} months remaining
-                  </Text>
-                  <Text style={styles.emiMeta}>
-                    Interest Rate: {emi.interestRate ?? 0}%
-                  </Text>
-                </View>
-
-                <Pressable
-                  style={[
-                    styles.deleteButton,
-                    isDeleting && styles.buttonDisabled,
-                  ]}
-                  onPress={() => confirmDelete(emi._id, emi.title)}
-                  disabled={isDeleting}
-                >
-                  <Text style={styles.deleteButtonText}>
-                    {isDeleting ? "Deleting..." : "Delete"}
-                  </Text>
-                </Pressable>
+      <SectionHeader title="Your EMIs" />
+      {loading ? (
+        <AppCard style={styles.loadingWrap}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+        </AppCard>
+      ) : emis.length === 0 ? (
+        <EmptyState message="No EMIs added yet. Start by adding your first EMI above." />
+      ) : (
+        emis.map((emi) => {
+          const isDeleting = deletingId === emi._id;
+          return (
+            <AppCard key={emi._id} style={styles.emiCard}>
+              <View style={styles.emiInfo}>
+                <Text style={styles.emiTitle}>{emi.title}</Text>
+                <Text style={styles.emiMeta}>
+                  {formatCurrencyINR(emi.monthlyAmount)} / month
+                </Text>
+                <Text style={styles.emiMeta}>
+                  {emi.remainingMonths} months remaining
+                </Text>
+                <Text style={styles.emiMeta}>
+                  Interest Rate: {emi.interestRate ?? 0}%
+                </Text>
               </View>
-            );
-          })
-        )}
-      </View>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.deleteButton,
+                  isDeleting && styles.deleteButtonDisabled,
+                  pressed && !isDeleting && styles.deleteButtonPressed,
+                ]}
+                onPress={() => handleDelete(emi._id, emi.title)}
+                disabled={isDeleting}
+              >
+                <Text style={styles.deleteButtonText}>
+                  {isDeleting ? "Deleting..." : "Delete"}
+                </Text>
+              </Pressable>
+            </AppCard>
+          );
+        })
+      )}
     </ScreenContainer>
   );
 }
@@ -361,95 +216,52 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: Colors.text,
-    marginBottom: 8,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 21,
     color: Colors.mutedText,
-    marginBottom: 20,
-  },
-  section: {
-    marginTop: 4,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.text,
-    marginBottom: 12,
+    marginBottom: Spacing.lg,
   },
   card: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 18,
-    padding: 16,
+    marginBottom: Spacing.lg,
   },
   fieldGroup: {
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
   label: {
     fontSize: 13,
     fontWeight: "600",
     color: Colors.text,
-    marginBottom: 8,
+    marginBottom: Spacing.xs,
   },
   input: {
     borderWidth: 1,
     borderColor: Colors.border,
-    borderRadius: 12,
+    borderRadius: Radius.input,
     paddingHorizontal: 14,
     paddingVertical: 14,
     fontSize: 15,
     color: Colors.text,
     backgroundColor: Colors.inputSurface,
   },
-  button: {
-    backgroundColor: Colors.primary,
-    borderRadius: 14,
-    paddingVertical: 15,
+  loadingWrap: {
     alignItems: "center",
-    marginTop: 8,
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  errorBox: {
-    backgroundColor: Colors.errorSurface,
-    borderWidth: 1,
-    borderColor: Colors.errorBorder,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  errorText: {
-    color: Colors.errorText,
-    fontSize: 14,
-  },
-  successBox: {
-    backgroundColor: Colors.successSurface,
-    borderWidth: 1,
-    borderColor: Colors.successBorder,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
-  },
-  successText: {
-    color: Colors.successText,
-    fontSize: 14,
+    paddingVertical: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   overviewRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 8,
+    paddingVertical: Spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: Colors.separator,
+  },
+  overviewRowLast: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingTop: Spacing.sm,
   },
   overviewLabel: {
     fontSize: 14,
@@ -460,25 +272,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.text,
   },
-  riskHigh: {
-    color: "#DC2626",
-  },
-  riskModerate: {
-    color: "#D97706",
-  },
-  riskLow: {
-    color: "#16A34A",
-  },
   emiCard: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
+    marginBottom: Spacing.sm,
   },
   emiInfo: {
-    marginBottom: 12,
+    marginBottom: Spacing.sm,
   },
   emiTitle: {
     fontSize: 16,
@@ -492,30 +290,22 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   deleteButton: {
-    backgroundColor: "#DC2626",
-    borderRadius: 12,
-    paddingVertical: 12,
+    backgroundColor: Colors.danger,
+    borderRadius: Radius.input,
+    paddingVertical: Spacing.sm,
     alignItems: "center",
+  },
+  deleteButtonDisabled: {
+    opacity: 0.7,
+  },
+  deleteButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   deleteButtonText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
   },
-  emptyCard: {
-    backgroundColor: Colors.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    borderRadius: 18,
-    padding: 16,
-  },
-  emptyText: {
-    color: Colors.mutedText,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  loadingWrap: {
-    paddingVertical: 24,
-    alignItems: "center",
-  },
 });
+

@@ -17,25 +17,14 @@ import {
   getAIAdvice,
   type ExpenseAnalytics,
 } from "@/services/expenseService";
-import { getCachedAIAdvice, setCachedAIAdvice } from "@/lib/aiCache";
+import { useAiAdvice } from "@/hooks/use-ai-advice";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import AppCard from "@/components/ui/AppCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import PrimaryButton from "@/components/ui/PrimaryButton";
 import EmptyState from "@/components/ui/EmptyState";
-
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
-}
-
-function parseAdvice(advice: string) {
-  return advice
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.replace(/^[-*•]\s*/, ""))
-    .filter(Boolean);
-}
+import { formatCurrencyINR } from "@/lib/formatters";
+import { parseBulletedLines } from "@/lib/text";
 
 const PIE_COLORS = [
   "#2563EB",
@@ -51,8 +40,7 @@ const PIE_COLORS = [
 
 export default function AnalyticsScreen() {
   const [analytics, setAnalytics] = useState<ExpenseAnalytics | null>(null);
-  const [adviceText, setAdviceText] = useState("");
-  const [aiLoading, setAiLoading] = useState(false);
+  const { advice, loading: aiLoading, refresh: refreshAiAdvice } = useAiAdvice(getAIAdvice);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,31 +57,6 @@ export default function AnalyticsScreen() {
 
   const chartWidth = Math.max(Dimensions.get("window").width - 64, 280);
 
-  const loadAIAdvice = useCallback(async () => {
-    try {
-      setAiLoading(true);
-
-      const cached = await getCachedAIAdvice();
-      if (cached) {
-        setAdviceText(cached);
-        return;
-      }
-
-      const aiData = await getAIAdvice();
-      const advice = aiData?.advice || "";
-
-      setAdviceText(advice);
-
-      if (advice) {
-        await setCachedAIAdvice(advice);
-      }
-    } catch {
-      setAdviceText("");
-    } finally {
-      setAiLoading(false);
-    }
-  }, []);
-
   const loadDashboard = useCallback(async () => {
     try {
       setLoading(true);
@@ -101,8 +64,6 @@ export default function AnalyticsScreen() {
 
       const analyticsData = await getAnalytics();
       setAnalytics(analyticsData);
-
-      loadAIAdvice();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dashboard";
@@ -110,12 +71,13 @@ export default function AnalyticsScreen() {
     } finally {
       setLoading(false);
     }
-  }, [loadAIAdvice]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
       loadDashboard();
-    }, [loadDashboard])
+      refreshAiAdvice();
+    }, [loadDashboard, refreshAiAdvice])
   );
 
   const pieData = useMemo(() => {
@@ -139,7 +101,7 @@ export default function AnalyticsScreen() {
     }));
   }, [analytics]);
 
-  const advicePoints = useMemo(() => parseAdvice(adviceText), [adviceText]);
+  const advicePoints = useMemo(() => parseBulletedLines(advice), [advice]);
 
   return (
     <ScreenContainer>
@@ -184,7 +146,7 @@ export default function AnalyticsScreen() {
           <View style={styles.summaryCard}>
             <Text style={styles.summaryLabel}>Total Expense</Text>
             <Text style={styles.summaryAmount}>
-              {formatCurrency(analytics.totalExpense)}
+              {formatCurrencyINR(analytics.totalExpense)}
             </Text>
             <Text style={styles.summaryHint}>
               Complete financial snapshot from your saved data
@@ -230,7 +192,7 @@ export default function AnalyticsScreen() {
                     <View style={styles.legendTextWrap}>
                       <Text style={styles.legendTitle}>{item.category}</Text>
                       <Text style={styles.legendSubtext}>
-                        {formatCurrency(item.total)} • {item.percentage}%
+                        {formatCurrencyINR(item.total)} • {item.percentage}%
                       </Text>
                     </View>
                   </View>

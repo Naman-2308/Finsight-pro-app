@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { ScrollView, StyleSheet, View, ViewStyle } from "react-native";
 import { Colors } from "@/constants/colors";
+import { Spacing } from "@/constants/spacing";
 import AmbientBackground from "@/components/ui/AmbientBackground";
 import FadeIn from "@/components/ui/FadeIn";
 
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   container: {
-    padding: 25,
-    paddingBottom: 40,
+    padding: Spacing.xl,
+    paddingBottom: Spacing["3xl"],
   },
 });

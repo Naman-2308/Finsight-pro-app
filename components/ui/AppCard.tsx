@@ -2,7 +2,8 @@ import { ReactNode } from "react";
 import { View, StyleSheet, ViewStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "@/constants/colors";
-import { Radius } from "@/constants/finsightTheme";
+import { Radius } from "@/constants/radius";
+import { Spacing } from "@/constants/spacing";
 
 interface Props {
   children: ReactNode;
@@ -29,7 +30,7 @@ const styles = StyleSheet.create({
     borderRadius: Radius.card,
     borderWidth: 1,
     borderColor: Colors.border,
-    padding: 16,
+    padding: Spacing.md,
     overflow: "hidden",
     shadowColor: "#020617",
     shadowOffset: { width: 0, height: 16 },
