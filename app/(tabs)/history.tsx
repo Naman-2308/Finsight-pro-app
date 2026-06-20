@@ -1,5 +1,14 @@
 import { useCallback, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Pressable,
+  Alert,
+  ScrollView,
+  TextInput,
+} from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import AppCard from "@/components/ui/AppCard";
@@ -9,9 +18,22 @@ import SectionHeader from "@/components/ui/SectionHeader";
 import { Colors } from "@/constants/colors";
 import { Radius } from "@/constants/radius";
 import { Spacing } from "@/constants/spacing";
-import { deleteExpense, getExpenses, type Expense } from "@/services/expenseService";
+import { deleteExpense, getExpenses, type Expense, type ExpenseCategory } from "@/services/expenseService";
 import { confirmDestructive } from "@/lib/confirm";
 import { formatCurrencyINR, formatDateShort, toInputDate } from "@/lib/formatters";
+
+const ALL_CATEGORIES: Array<"All" | ExpenseCategory> = [
+  "All",
+  "Food",
+  "Transport",
+  "Shopping",
+  "Bills",
+  "Entertainment",
+  "Health",
+  "Education",
+  "Travel",
+  "Other",
+];
 
 export default function HistoryScreen() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -19,11 +41,25 @@ export default function HistoryScreen() {
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const loadExpenses = useCallback(async () => {
+  // Filters
+  const [selectedCategory, setSelectedCategory] = useState<"All" | ExpenseCategory>("All");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+
+  const loadExpenses = useCallback(async (
+    category?: string,
+    start?: string,
+    end?: string,
+  ) => {
     try {
       setLoading(true);
       setError("");
-      const data = await getExpenses();
+      const data = await getExpenses({
+        category: category && category !== "All" ? category : undefined,
+        startDate: start || undefined,
+        endDate: end || undefined,
+      });
       setExpenses(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load expenses";
@@ -35,9 +71,21 @@ export default function HistoryScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadExpenses();
+      loadExpenses(selectedCategory, startDate, endDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadExpenses])
   );
+
+  function applyFilters() {
+    loadExpenses(selectedCategory, startDate, endDate);
+  }
+
+  function clearFilters() {
+    setSelectedCategory("All");
+    setStartDate("");
+    setEndDate("");
+    loadExpenses("All", "", "");
+  }
 
   async function handleDelete(expense: Expense) {
     const ok = await confirmDestructive(
@@ -71,13 +119,100 @@ export default function HistoryScreen() {
     });
   }
 
+  const hasActiveFilters = selectedCategory !== "All" || !!startDate || !!endDate;
+
   return (
     <ScreenContainer>
       <View style={styles.header}>
         <Text style={styles.title}>Expense History</Text>
-        <Text style={styles.subtitle}>View all your saved expenses in one place.</Text>
+        <Text style={styles.subtitle}>Search, filter, and manage all your expenses.</Text>
       </View>
 
+      {/* ── Filter Panel ── */}
+      <AppCard style={styles.filterCard}>
+        <Pressable
+          style={styles.filterToggleRow}
+          onPress={() => setFiltersExpanded((v) => !v)}
+        >
+          <Text style={styles.filterToggleLabel}>
+            Filters{hasActiveFilters ? " ●" : ""}
+          </Text>
+          <Text style={styles.filterToggleChevron}>
+            {filtersExpanded ? "▲" : "▼"}
+          </Text>
+        </Pressable>
+
+        {filtersExpanded && (
+          <View style={styles.filterBody}>
+            {/* Category chips */}
+            <Text style={styles.filterLabel}>Category</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryRow}
+            >
+              {ALL_CATEGORIES.map((cat) => {
+                const active = selectedCategory === cat;
+                return (
+                  <Pressable
+                    key={cat}
+                    onPress={() => setSelectedCategory(cat)}
+                    style={[styles.chip, active && styles.chipActive]}
+                  >
+                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
+                      {cat}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            {/* Date range */}
+            <View style={styles.dateRow}>
+              <View style={styles.dateField}>
+                <Text style={styles.filterLabel}>From</Text>
+                <TextInput
+                  value={startDate}
+                  onChangeText={setStartDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={Colors.mutedText}
+                  style={styles.dateInput}
+                />
+              </View>
+              <View style={styles.dateField}>
+                <Text style={styles.filterLabel}>To</Text>
+                <TextInput
+                  value={endDate}
+                  onChangeText={setEndDate}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={Colors.mutedText}
+                  style={styles.dateInput}
+                />
+              </View>
+            </View>
+
+            {/* Actions */}
+            <View style={styles.filterActions}>
+              <Pressable
+                onPress={applyFilters}
+                style={({ pressed }) => [styles.applyButton, pressed && styles.buttonPressed]}
+              >
+                <Text style={styles.applyButtonText}>Apply</Text>
+              </Pressable>
+              {hasActiveFilters && (
+                <Pressable
+                  onPress={clearFilters}
+                  style={({ pressed }) => [styles.clearButton, pressed && styles.buttonPressed]}
+                >
+                  <Text style={styles.clearButtonText}>Clear</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        )}
+      </AppCard>
+
+      {/* ── Expense List ── */}
       {loading ? (
         <AppCard style={styles.infoCard}>
           <ActivityIndicator size="small" color={Colors.primary} />
@@ -87,16 +222,22 @@ export default function HistoryScreen() {
         <AppCard style={styles.infoCard}>
           <Text style={styles.errorTitle}>Could not load expenses</Text>
           <Text style={styles.errorText}>{error}</Text>
-          <PrimaryButton title="Retry" onPress={loadExpenses} />
+          <PrimaryButton title="Retry" onPress={() => loadExpenses(selectedCategory, startDate, endDate)} />
         </AppCard>
       ) : expenses.length === 0 ? (
-        <EmptyState message="No expenses found. Add an expense to start building your history." />
+        <EmptyState
+          message={
+            hasActiveFilters
+              ? "No expenses match your filters. Try adjusting the date range or category."
+              : "No expenses found. Add one to start building your history."
+          }
+        />
       ) : (
         <>
           <SectionHeader
-            title={`Total Expenses: ${expenses.length}`}
+            title={`${expenses.length} expense${expenses.length !== 1 ? "s" : ""}${hasActiveFilters ? " (filtered)" : ""}`}
             rightSlot={
-              <Pressable onPress={loadExpenses}>
+              <Pressable onPress={() => loadExpenses(selectedCategory, startDate, endDate)}>
                 <Text style={styles.refreshText}>Refresh</Text>
               </Pressable>
             }
@@ -148,7 +289,7 @@ export default function HistoryScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   title: {
     fontSize: 28,
@@ -161,6 +302,121 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     color: Colors.mutedText,
   },
+
+  // Filter panel
+  filterCard: {
+    marginBottom: Spacing.md,
+    padding: 0,
+    overflow: "hidden",
+  },
+  filterToggleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 14,
+  },
+  filterToggleLabel: {
+    color: Colors.text,
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  filterToggleChevron: {
+    color: Colors.mutedText,
+    fontSize: 11,
+  },
+  filterBody: {
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    borderTopWidth: 1,
+    borderTopColor: Colors.separator,
+  },
+  filterLabel: {
+    color: Colors.mutedText,
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 8,
+    marginTop: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  categoryRow: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  chip: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  chipActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  chipText: {
+    color: Colors.mutedText,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: "#fff",
+  },
+  dateRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  dateField: {
+    flex: 1,
+  },
+  dateInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: Colors.text,
+    backgroundColor: Colors.inputSurface,
+  },
+  filterActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  applyButton: {
+    flex: 1,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  applyButtonText: {
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  clearButton: {
+    flex: 1,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  clearButtonText: {
+    color: Colors.mutedText,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  buttonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
+  },
+
+  // Expense list
   refreshText: {
     color: Colors.primary,
     fontSize: 14,
@@ -249,4 +505,3 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
 });
-

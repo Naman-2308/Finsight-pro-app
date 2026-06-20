@@ -1,13 +1,10 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
 import { type FinanceOverview } from "@/services/expenseService";
+import { formatCurrencyINR } from "@/lib/formatters";
 
 interface Props {
   finance: FinanceOverview | null;
-}
-
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 }
 
 export default function BudgetHealthCard({ finance }: Props) {
@@ -39,21 +36,21 @@ export default function BudgetHealthCard({ finance }: Props) {
       <View style={styles.rowBetween}>
         <Text style={styles.cardLabel}>Monthly Budget</Text>
         <Text style={styles.cardValue}>
-          {formatCurrency(finance.monthlyBudget)}
+          {formatCurrencyINR(finance.monthlyBudget)}
         </Text>
       </View>
 
       <View style={styles.rowBetween}>
         <Text style={styles.cardLabel}>Spent This Month</Text>
         <Text style={styles.cardValue}>
-          {formatCurrency(finance.spentThisMonth)}
+          {formatCurrencyINR(finance.spentThisMonth)}
         </Text>
       </View>
 
       <View style={styles.rowBetween}>
         <Text style={styles.cardLabel}>Remaining Budget</Text>
         <Text style={styles.cardValue}>
-          {formatCurrency(finance.remainingBudget)}
+          {formatCurrencyINR(finance.remainingBudget)}
         </Text>
       </View>
 
@@ -110,7 +107,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 10,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: Colors.border,
     borderRadius: 999,
     overflow: "hidden",
     marginBottom: 8,
@@ -127,27 +124,27 @@ const styles = StyleSheet.create({
   },
   warningBox: {
     marginTop: 10,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: Colors.warningSurface,
     borderWidth: 1,
-    borderColor: "#FCD34D",
+    borderColor: Colors.warningBorder,
     borderRadius: 12,
     padding: 12,
   },
   warningText: {
-    color: "#92400E",
+    color: Colors.warningText,
     fontSize: 13,
     lineHeight: 18,
   },
   successBox: {
     marginTop: 10,
-    backgroundColor: "#DCFCE7",
+    backgroundColor: Colors.successSurface,
     borderWidth: 1,
-    borderColor: "#86EFAC",
+    borderColor: Colors.successBorder,
     borderRadius: 12,
     padding: 12,
   },
   successText: {
-    color: "#166534",
+    color: Colors.successText,
     fontSize: 13,
     lineHeight: 18,
   },

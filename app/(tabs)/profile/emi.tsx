@@ -17,7 +17,7 @@ import { confirmDestructive } from "@/lib/confirm";
 
 function getRiskColor(riskLevel: string) {
   if (riskLevel === "High") return Colors.danger;
-  if (riskLevel === "Moderate") return "#D97706";
+  if (riskLevel === "Moderate") return Colors.warningText;
   return Colors.success;
 }
 

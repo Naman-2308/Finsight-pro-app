@@ -1,13 +1,10 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
 import { type EmiOverview } from "@/services/expenseService";
+import { formatCurrencyINR } from "@/lib/formatters";
 
 interface Props {
   emiOverview: EmiOverview | null;
-}
-
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 }
 
 export default function EmiLoadCard({ emiOverview }: Props) {
@@ -33,7 +30,7 @@ export default function EmiLoadCard({ emiOverview }: Props) {
       <View style={styles.rowBetween}>
         <Text style={styles.cardLabel}>Total Monthly EMI</Text>
         <Text style={styles.cardValue}>
-          {formatCurrency(emiOverview.totalMonthlyEMI)}
+          {formatCurrencyINR(emiOverview.totalMonthlyEMI)}
         </Text>
       </View>
 
@@ -57,22 +54,8 @@ export default function EmiLoadCard({ emiOverview }: Props) {
       </View>
 
       {emiAlert ? (
-        <View
-          style={
-            emiOverview.riskLevel === "Low"
-              ? styles.successBox
-              : styles.warningBox
-          }
-        >
-          <Text
-            style={
-              emiOverview.riskLevel === "Low"
-                ? styles.successText
-                : styles.warningText
-            }
-          >
-            {emiAlert}
-          </Text>
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>{emiAlert}</Text>
         </View>
       ) : (
         <View style={styles.successBox}>
@@ -109,37 +92,37 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   riskHigh: {
-    color: "#DC2626",
+    color: Colors.danger,
   },
   riskModerate: {
-    color: "#D97706",
+    color: Colors.warningText,
   },
   riskLow: {
-    color: "#16A34A",
+    color: Colors.success,
   },
   warningBox: {
     marginTop: 10,
-    backgroundColor: "#FEF3C7",
+    backgroundColor: Colors.warningSurface,
     borderWidth: 1,
-    borderColor: "#FCD34D",
+    borderColor: Colors.warningBorder,
     borderRadius: 12,
     padding: 12,
   },
   warningText: {
-    color: "#92400E",
+    color: Colors.warningText,
     fontSize: 13,
     lineHeight: 18,
   },
   successBox: {
     marginTop: 10,
-    backgroundColor: "#DCFCE7",
+    backgroundColor: Colors.successSurface,
     borderWidth: 1,
-    borderColor: "#86EFAC",
+    borderColor: Colors.successBorder,
     borderRadius: 12,
     padding: 12,
   },
   successText: {
-    color: "#166534",
+    color: Colors.successText,
     fontSize: 13,
     lineHeight: 18,
   },

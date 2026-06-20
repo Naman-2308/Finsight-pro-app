@@ -18,7 +18,20 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: Colors.background },
         }}
-      />
+      >
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(auth)/signup" />
+        <Stack.Screen name="edit-expense/[id]" />
+        <Stack.Screen
+          name="ai-chat"
+          options={{
+            presentation: "modal",
+            animation: "slide_from_bottom",
+            contentStyle: { backgroundColor: Colors.background },
+          }}
+        />
+      </Stack>
     </SafeAreaProvider>
   );
 }

@@ -11,9 +11,15 @@ export const Radius = {
   tooltip: 8,
 } as const;
 
-/** Soft ambient accents (used by AmbientBackground) */
+/**
+ * Ambient orb colours — three orbs tinting the background:
+ *   top-right:    emerald (brand)
+ *   mid-left:     sapphire (data/trust)
+ *   bottom-right: gold (wealth)
+ * Opacities kept low so they add depth without muddying the UI.
+ */
 export const Ambient = {
-  teal: "rgba(45, 212, 191, 0.14)",
-  blue: "rgba(59, 130, 246, 0.12)",
-  indigo: "rgba(99, 102, 241, 0.1)",
+  teal:   "rgba(0,   214, 143, 0.13)",
+  blue:   "rgba(79,  131, 241, 0.10)",
+  violet: "rgba(240, 180,  41, 0.08)",
 } as const;

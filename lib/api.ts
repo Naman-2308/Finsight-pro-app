@@ -1,5 +1,7 @@
 import axios from "axios";
-import { getToken } from "./auth";
+import { router } from "expo-router";
+import { getToken, clearAuth } from "./auth";
+import { clearCachedAIAdvice } from "./aiCache";
 
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL || "http://127.0.0.1:5000/api";
@@ -21,7 +23,22 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    if (error?.response?.status === 401) {
+      // Auth routes (login, register) return 401 for bad credentials — those
+      // screens handle their own errors. Only redirect for expired session tokens
+      // on protected routes, not during the login/register flow itself.
+      const url: string = error?.config?.url || "";
+      const isAuthRoute = url.includes("/auth/");
+
+      if (!isAuthRoute) {
+        await clearAuth();
+        await clearCachedAIAdvice();
+        router.replace("/login");
+        return Promise.reject(new Error("Session expired. Please sign in again."));
+      }
+    }
+
     const message =
       error?.response?.data?.message ||
       error?.message ||

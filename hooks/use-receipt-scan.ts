@@ -6,6 +6,8 @@ import { type SaveMode } from "@/components/scan/SaveModeCard";
 import { type ScannedBill } from "@/components/scan/BillEditorCard";
 import { type ScannedItem } from "@/components/scan/ItemEditorCard";
 
+const RATE_LIMIT_COOLDOWN_S = 60; // seconds to wait after a 429
+
 async function buildReceiptFormData(imageUri: string) {
   const formData = new FormData();
 
@@ -32,16 +34,34 @@ export function useReceiptScan() {
   const [saveMode, setSaveMode] = useState<SaveMode>("billTotals");
   const [isScanning, setIsScanning] = useState(false);
 
-  const scanningCooldownTimeout = useRef<ReturnType<typeof setTimeout> | null>(
-    null
-  );
+  // Countdown displayed when rate-limited (0 = not rate-limited)
+  const [rateLimitCountdown, setRateLimitCountdown] = useState(0);
+
+  const scanningCooldownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     return () => {
-      if (scanningCooldownTimeout.current) {
-        clearTimeout(scanningCooldownTimeout.current);
-      }
+      if (scanningCooldownTimeout.current) clearTimeout(scanningCooldownTimeout.current);
+      if (countdownInterval.current) clearInterval(countdownInterval.current);
     };
+  }, []);
+
+  const startRateLimitCountdown = useCallback((seconds: number) => {
+    if (countdownInterval.current) clearInterval(countdownInterval.current);
+
+    setRateLimitCountdown(seconds);
+
+    countdownInterval.current = setInterval(() => {
+      setRateLimitCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownInterval.current!);
+          countdownInterval.current = null;
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
   }, []);
 
   const resetScannedData = useCallback(() => {
@@ -51,29 +71,19 @@ export function useReceiptScan() {
 
   const requestMediaLibraryPermission = useCallback(async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (!permission.granted) {
-      Alert.alert(
-        "Permission required",
-        "Please allow gallery access to pick receipt images."
-      );
+      Alert.alert("Permission required", "Please allow gallery access to pick receipt images.");
       return false;
     }
-
     return true;
   }, []);
 
   const requestCameraPermission = useCallback(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
-
     if (!permission.granted) {
-      Alert.alert(
-        "Permission required",
-        "Please allow camera access to capture receipt images."
-      );
+      Alert.alert("Permission required", "Please allow camera access to capture receipt images.");
       return false;
     }
-
     return true;
   }, []);
 
@@ -114,7 +124,7 @@ export function useReceiptScan() {
       return;
     }
 
-    if (isScanning || loading) return;
+    if (isScanning || loading || rateLimitCountdown > 0) return;
 
     try {
       setIsScanning(true);
@@ -123,9 +133,7 @@ export function useReceiptScan() {
       const formData = await buildReceiptFormData(image);
 
       const res = await api.post("/receipt/scan", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       const scannedBills = res?.data?.extracted?.bills || [];
@@ -137,25 +145,32 @@ export function useReceiptScan() {
       }
 
       setBills(scannedBills);
-    } catch (err: any) {
-      const message =
-        err?.message ||
-        err?.response?.data?.message ||
-        "Receipt scanning failed. Please try again.";
 
-      Alert.alert("Scan failed", message);
-      setBills([]);
-    } finally {
-      setLoading(false);
-
-      if (scanningCooldownTimeout.current) {
-        clearTimeout(scanningCooldownTimeout.current);
-      }
+      // Cooldown only on success — prevents rapid re-scans of the same image
+      if (scanningCooldownTimeout.current) clearTimeout(scanningCooldownTimeout.current);
       scanningCooldownTimeout.current = setTimeout(() => {
         setIsScanning(false);
       }, 4000);
+    } catch (err: any) {
+      const statusCode = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Receipt scanning failed. Please try again.";
+
+      if (statusCode === 429) {
+        // Rate limited — start countdown, don't show generic alert
+        startRateLimitCountdown(RATE_LIMIT_COOLDOWN_S);
+      } else {
+        Alert.alert("Scan failed", message);
+      }
+
+      setBills([]);
+      setIsScanning(false);
+    } finally {
+      setLoading(false);
     }
-  }, [image, isScanning, loading]);
+  }, [image, isScanning, loading, rateLimitCountdown, startRateLimitCountdown]);
 
   const saveExpenses = useCallback(async () => {
     if (!bills.length) {
@@ -177,9 +192,7 @@ export function useReceiptScan() {
 
       Alert.alert(
         "Success",
-        `${res.data?.message || "Expenses saved"}${
-          createdCount ? ` (${createdCount} created)` : ""
-        }`
+        `${res.data?.message || "Expenses saved"}${createdCount ? ` (${createdCount} created)` : ""}`
       );
 
       setBills([]);
@@ -196,9 +209,7 @@ export function useReceiptScan() {
   const updateBillField = useCallback(
     <K extends keyof ScannedBill>(billIndex: number, field: K, value: ScannedBill[K]) => {
       setBills((prev) =>
-        prev.map((bill, index) =>
-          index === billIndex ? { ...bill, [field]: value } : bill
-        )
+        prev.map((bill, index) => (index === billIndex ? { ...bill, [field]: value } : bill))
       );
     },
     []
@@ -214,13 +225,10 @@ export function useReceiptScan() {
       setBills((prev) =>
         prev.map((bill, currentBillIndex) => {
           if (currentBillIndex !== billIndex) return bill;
-
           return {
             ...bill,
             items: (bill.items || []).map((item, currentItemIndex) =>
-              currentItemIndex === itemIndex
-                ? { ...item, [field]: value }
-                : item
+              currentItemIndex === itemIndex ? { ...item, [field]: value } : item
             ),
           };
         })
@@ -244,6 +252,7 @@ export function useReceiptScan() {
     totalLineItems,
     loading,
     saving,
+    rateLimitCountdown,
     pickImage,
     takePhoto,
     scanReceipt,
@@ -252,4 +261,3 @@ export function useReceiptScan() {
     updateItemField,
   };
 }
-

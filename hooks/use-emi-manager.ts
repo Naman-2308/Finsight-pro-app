@@ -60,7 +60,7 @@ export function useEmiManager() {
       setErrorMessage("Please enter a valid monthly EMI amount.");
       return;
     }
-    if (!Number.isFinite(monthsNum) || monthsNum <= 0) {
+    if (!Number.isFinite(monthsNum) || monthsNum < 0) {
       setErrorMessage("Please enter valid remaining months.");
       return;
     }

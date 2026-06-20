@@ -16,6 +16,13 @@ import {
   type ExpenseCategory,
 } from "@/services/expenseService";
 
+// Validates YYYY-MM-DD and checks the date is real (e.g. rejects 2025-02-30)
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value);
+  return !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
 const CATEGORY_OPTIONS: ExpenseCategory[] = [
   "Food",
   "Transport",
@@ -62,6 +69,11 @@ export default function EditExpenseScreen() {
 
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
       Alert.alert("Invalid amount", "Please enter a valid expense amount.");
+      return;
+    }
+
+    if (!isValidDate(date)) {
+      Alert.alert("Invalid date", "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-03-20).");
       return;
     }
 

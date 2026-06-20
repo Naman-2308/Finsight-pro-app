@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const AI_ADVICE_CACHE_KEY = "finsight_ai_advice_cache";
-const AI_ADVICE_CACHE_TTL_MS = 1000 * 60 * 15; // 15 minutes
+const AI_ADVICE_CACHE_TTL_MS = 1000 * 60 * 60 * 2; // 2 hours — matches server TTL
 
 export interface CachedAIAdvice {
   advice: string;

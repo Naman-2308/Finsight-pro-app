@@ -10,6 +10,7 @@ import {
 import { useFocusEffect, router, type Href } from "expo-router";
 import { Colors } from "@/constants/colors";
 import { clearAuth, getAuth } from "@/lib/auth";
+import { clearCachedAIAdvice } from "@/lib/aiCache";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import AmbientBackground from "@/components/ui/AmbientBackground";
 
@@ -40,7 +41,8 @@ export default function ProfileScreen() {
   async function handleLogout() {
     try {
       setLoggingOut(true);
-      await clearAuth();
+      // Clear both auth token and AI advice cache so stale data doesn't bleed into the next session
+      await Promise.all([clearAuth(), clearCachedAIAdvice()]);
       router.replace("/login" as Href);
     } catch {
       Alert.alert("Error", "Failed to log out. Please try again.");
@@ -114,19 +116,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#E6EEFF",
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 21,
-    color: "#8FA2CC",
+    color: Colors.mutedText,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: "rgba(125, 147, 188, 0.24)",
+    borderColor: Colors.border,
     borderRadius: 20,
     padding: 18,
     marginBottom: 20,
@@ -139,13 +141,13 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#9AA8C7",
+    color: Colors.mutedText,
     marginBottom: 6,
   },
   value: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#E9EEFF",
+    color: Colors.text,
   },
   spacingTop: {
     marginTop: 18,
@@ -163,7 +165,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   logoutButton: {
-    backgroundColor: "#DC2626",
+    backgroundColor: Colors.danger,
     borderRadius: 14,
     paddingVertical: 15,
     alignItems: "center",

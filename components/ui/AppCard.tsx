@@ -13,10 +13,11 @@ interface Props {
 export default function AppCard({ children, style }: Props) {
   return (
     <View style={[styles.card, style]}>
+      {/* Emerald → gold top accent line */}
       <LinearGradient
-        colors={["rgba(56, 189, 248, 0.45)", "rgba(37, 99, 235, 0.06)"]}
-        start={{ x: 0, y: 0.5 }}
-        end={{ x: 1, y: 0.5 }}
+        colors={[Colors.primary, Colors.accentViolet]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
         style={styles.accentLine}
       />
       {children}
@@ -32,11 +33,11 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     padding: Spacing.md,
     overflow: "hidden",
-    shadowColor: "#020617",
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.32,
-    shadowRadius: 22,
-    elevation: 9,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.30,
+    shadowRadius: 20,
+    elevation: 8,
   },
   accentLine: {
     position: "absolute",

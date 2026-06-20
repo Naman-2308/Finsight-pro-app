@@ -45,6 +45,7 @@ export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const entrance = useRef(new Animated.Value(0)).current;
+  const lastLoadedAt = useRef<number>(0);
 
   useEffect(() => {
     Animated.timing(entrance, {
@@ -57,13 +58,17 @@ export default function AnalyticsScreen() {
 
   const chartWidth = Math.max(Dimensions.get("window").width - 64, 280);
 
-  const loadDashboard = useCallback(async () => {
+  const loadDashboard = useCallback(async (force = false) => {
+    const STALE_MS = 30_000;
+    if (!force && Date.now() - lastLoadedAt.current < STALE_MS) return;
+
     try {
       setLoading(true);
       setError("");
 
       const analyticsData = await getAnalytics();
       setAnalytics(analyticsData);
+      lastLoadedAt.current = Date.now();
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load dashboard";
@@ -94,10 +99,13 @@ export default function AnalyticsScreen() {
   const barData = useMemo(() => {
     if (!analytics?.monthlyTrend?.length) return [];
 
+    const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
     return analytics.monthlyTrend.slice(-6).map((item) => ({
       value: item.total,
-      label: item.label,
-      frontColor: "#2563EB",
+      // Format as "Jan '25" instead of "1/2025"
+      label: `${MONTH_SHORT[item.month - 1]} '${String(item.year).slice(-2)}`,
+      frontColor: Colors.primary,
     }));
   }, [analytics]);
 

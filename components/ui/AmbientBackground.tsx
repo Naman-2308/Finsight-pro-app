@@ -3,11 +3,18 @@ import { Ambient } from "@/constants/finsightTheme";
 
 const { width: W } = Dimensions.get("window");
 
+/**
+ * Three soft ambient orbs rendered behind every screen:
+ *  • Top-right  — brand teal
+ *  • Mid-left   — primary indigo-blue
+ *  • Bottom-right — violet depth
+ */
 export default function AmbientBackground() {
   return (
     <View style={styles.root} pointerEvents="none">
-      <View style={[styles.orb, styles.orbTop]} />
-      <View style={[styles.orb, styles.orbLeft]} />
+      <View style={[styles.orb, styles.orbTopRight]} />
+      <View style={[styles.orb, styles.orbMidLeft]} />
+      <View style={[styles.orb, styles.orbBottomRight]} />
     </View>
   );
 }
@@ -21,18 +28,25 @@ const styles = StyleSheet.create({
     position: "absolute",
     borderRadius: 999,
   },
-  orbTop: {
-    top: -W * 0.15,
-    right: -W * 0.1,
-    width: W * 0.55,
-    height: W * 0.55,
+  orbTopRight: {
+    top: -W * 0.18,
+    right: -W * 0.12,
+    width: W * 0.60,
+    height: W * 0.60,
     backgroundColor: Ambient.teal,
   },
-  orbLeft: {
+  orbMidLeft: {
     top: W * 0.35,
-    left: -W * 0.2,
-    width: W * 0.5,
-    height: W * 0.5,
+    left: -W * 0.22,
+    width: W * 0.55,
+    height: W * 0.55,
     backgroundColor: Ambient.blue,
+  },
+  orbBottomRight: {
+    bottom: -W * 0.08,
+    right: -W * 0.15,
+    width: W * 0.45,
+    height: W * 0.45,
+    backgroundColor: Ambient.violet,
   },
 });

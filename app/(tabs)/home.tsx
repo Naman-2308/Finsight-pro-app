@@ -9,7 +9,10 @@ import {
   Easing,
   RefreshControl,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Bot } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Colors } from "@/constants/colors";
 import { Spacing } from "@/constants/spacing";
 import {
@@ -36,6 +39,7 @@ import RecentExpensesList from "@/components/home/RecentExpensesList";
 import TitledCardSection from "@/components/ui/TitledCardSection";
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const [summary, setSummary] = useState<ExpenseSummary | null>(null);
   const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
   const [finance, setFinance] = useState<FinanceOverview | null>(null);
@@ -47,6 +51,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [criticalError, setCriticalError] = useState("");
+  const lastLoadedAt = useRef<number>(0);
   const sectionAnims = useRef(
     Array.from({ length: 8 }, () => new Animated.Value(0))
   ).current;
@@ -54,6 +59,11 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const loadHomeData = useCallback(async (silent = false) => {
+    // Stale-while-revalidate: skip auto-refetch on tab focus if data is fresh (< 30s old)
+    // Pull-to-refresh (silent=true) always forces a full refetch
+    const STALE_MS = 30_000;
+    if (!silent && Date.now() - lastLoadedAt.current < STALE_MS) return;
+
     try {
       if (silent) {
         setRefreshing(true);
@@ -63,14 +73,15 @@ export default function HomeScreen() {
 
       setCriticalError("");
 
-      // Critical content first
+      // Critical content first — fetch only 5 recent expenses (limit param avoids loading entire history)
       const [summaryData, expensesData] = await Promise.all([
         getSummary(),
-        getExpenses(),
+        getExpenses({ limit: 5 }),
       ]);
 
       setSummary(summaryData);
-      setRecentExpenses((expensesData || []).slice(0, 5));
+      setRecentExpenses(expensesData || []);
+      lastLoadedAt.current = Date.now();
 
       // Secondary widgets in background, isolated
       getFinanceOverview()
@@ -232,6 +243,7 @@ export default function HomeScreen() {
         style={styles.screen}
         contentContainerStyle={styles.container}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -241,7 +253,7 @@ export default function HomeScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={() => loadHomeData(true)}
-            tintColor="#93C5FD"
+            tintColor={Colors.accentTeal}
             colors={[Colors.primary]}
           />
         }
@@ -331,6 +343,25 @@ export default function HomeScreen() {
           </View>
         </Animated.View>
       </Animated.ScrollView>
+
+      {/* ── AI Copilot FAB ───────────────────────────────────────── */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.fab,
+          { bottom: Math.max(insets.bottom + 20, 28) },
+          pressed && styles.fabPressed,
+        ]}
+        onPress={() => router.push("/ai-chat")}
+      >
+        <LinearGradient
+          colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.fabGradient}
+        >
+          <Bot size={22} color="#0A0C10" strokeWidth={2.2} />
+        </LinearGradient>
+      </Pressable>
     </View>
   );
 }
@@ -345,18 +376,18 @@ const styles = StyleSheet.create({
   },
   loadingGlow: {
     position: "absolute",
-    width: 210,
-    height: 210,
+    width: 220,
+    height: 220,
     borderRadius: 999,
-    backgroundColor: "rgba(56, 189, 248, 0.16)",
-    shadowColor: "#38BDF8",
+    backgroundColor: "rgba(20, 217, 196, 0.14)",
+    shadowColor: Colors.accentTeal,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
-    shadowRadius: 32,
+    shadowRadius: 36,
     elevation: 10,
   },
   loadingText: {
-    color: "#A8B3CF",
+    color: Colors.mutedText,
     fontSize: 13,
     fontWeight: "600",
     letterSpacing: 0.3,
@@ -372,22 +403,22 @@ const styles = StyleSheet.create({
   },
   ambientOrbPrimary: {
     position: "absolute",
-    top: -90,
+    top: -80,
     right: -50,
-    width: 220,
-    height: 220,
+    width: 240,
+    height: 240,
     borderRadius: 999,
-    backgroundColor: "#2DD4BF",
+    backgroundColor: "rgba(0, 214, 143, 0.10)",
     zIndex: 0,
   },
   ambientOrbSecondary: {
     position: "absolute",
-    top: 200,
-    left: -80,
-    width: 170,
-    height: 170,
+    top: 220,
+    left: -70,
+    width: 180,
+    height: 180,
     borderRadius: 999,
-    backgroundColor: "#1D4ED8",
+    backgroundColor: "rgba(79, 131, 241, 0.08)",
     zIndex: 0,
   },
   sectionCard: {
@@ -435,5 +466,29 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
+  },
+
+  // FAB
+  fab: {
+    position: "absolute",
+    right: 20,
+    borderRadius: 999,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 16,
+    elevation: 10,
+    zIndex: 99,
+  },
+  fabPressed: {
+    opacity: 0.88,
+    transform: [{ scale: 0.93 }],
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

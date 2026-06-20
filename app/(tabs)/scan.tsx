@@ -1,4 +1,4 @@
-import { Text, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Colors } from "@/constants/colors";
 import ScreenContainer from "@/components/ui/ScreenContainer";
 import SectionHeader from "@/components/ui/SectionHeader";
@@ -20,6 +20,7 @@ export default function ScanScreen() {
     totalLineItems,
     loading,
     saving,
+    rateLimitCountdown,
     pickImage,
     takePhoto,
     scanReceipt,
@@ -40,16 +41,27 @@ export default function ScanScreen() {
         <ImagePreviewCard
           image={image}
           loading={loading}
-          onScan={scanReceipt}
+          onScan={rateLimitCountdown > 0 ? undefined : scanReceipt}
         />
       ) : (
         <EmptyState message="No receipt selected yet. Pick an image or capture a photo to begin scanning." />
       )}
 
+      {/* Rate limit banner */}
+      {rateLimitCountdown > 0 && (
+        <View style={styles.rateLimitBanner}>
+          <Text style={styles.rateLimitTitle}>⏳ AI scanner is busy</Text>
+          <Text style={styles.rateLimitText}>
+            Both AI models are currently rate-limited. You can retry in{" "}
+            <Text style={styles.rateLimitCountdown}>{rateLimitCountdown}s</Text>.
+          </Text>
+        </View>
+      )}
+
       {loading && (
         <AppCard style={styles.loadingCard}>
           <ActivityIndicator size="large" color={Colors.primary} />
-          <Text style={styles.loadingText}>Analyzing receipt...</Text>
+          <Text style={styles.loadingText}>Analyzing receipt with AI...</Text>
         </AppCard>
       )}
 
@@ -111,6 +123,31 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 10,
     color: Colors.mutedText,
+    fontSize: 14,
+  },
+  rateLimitBanner: {
+    backgroundColor: Colors.warningSurface,
+    borderWidth: 1,
+    borderColor: Colors.warningBorder,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  rateLimitTitle: {
+    color: Colors.warningText,
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  rateLimitText: {
+    color: Colors.warningText,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  rateLimitCountdown: {
+    fontWeight: "800",
     fontSize: 14,
   },
 });

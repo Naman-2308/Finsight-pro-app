@@ -13,8 +13,6 @@ export function useFinanceSetup() {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      setErrorMessage("");
-      setSuccessMessage("");
       const data = await getFinanceOverview();
       setSalary(String(data.monthlySalary ?? ""));
       setBudget(String(data.monthlyBudget ?? ""));
@@ -36,12 +34,12 @@ export function useFinanceSetup() {
     }
     const monthlySalary = Number(salary);
     const monthlyBudget = Number(budget);
-    if (!Number.isFinite(monthlySalary) || monthlySalary < 0) {
-      setErrorMessage("Please enter a valid monthly salary.");
+    if (!Number.isFinite(monthlySalary) || monthlySalary <= 0) {
+      setErrorMessage("Monthly salary must be greater than zero.");
       return;
     }
-    if (!Number.isFinite(monthlyBudget) || monthlyBudget < 0) {
-      setErrorMessage("Please enter a valid monthly budget.");
+    if (!Number.isFinite(monthlyBudget) || monthlyBudget <= 0) {
+      setErrorMessage("Monthly budget must be greater than zero.");
       return;
     }
 

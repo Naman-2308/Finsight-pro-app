@@ -1,15 +1,12 @@
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { Colors } from "@/constants/colors";
 import { type Expense } from "@/services/expenseService";
+import { formatCurrencyINR } from "@/lib/formatters";
 
 interface Props {
   expenses: Expense[];
   refreshing: boolean;
   onRefresh: () => void;
-}
-
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 }
 
 function formatDate(dateString: string) {
@@ -55,7 +52,7 @@ export default function RecentExpensesList({
               </Text>
             </View>
             <Text style={styles.expenseAmount}>
-              {formatCurrency(expense.amount)}
+              {formatCurrencyINR(expense.amount)}
             </Text>
           </View>
         ))

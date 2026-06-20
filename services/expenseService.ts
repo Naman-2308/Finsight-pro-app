@@ -71,8 +71,13 @@ export async function createExpense(payload: CreateExpensePayload) {
   return response.data;
 }
 
-export async function getExpenses() {
-  const response = await api.get<Expense[]>("/expenses");
+export async function getExpenses(params?: {
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  limit?: number;
+}) {
+  const response = await api.get<Expense[]>("/expenses", { params });
   return response.data;
 }
 
@@ -115,6 +120,7 @@ export interface FinanceOverview {
   spentThisMonth: number;
   remainingBudget: number;
   estimatedSavings: number;
+  totalMonthlyEMI: number;
   budgetUsedPercentage: number;
 }
 

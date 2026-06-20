@@ -1,9 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Colors } from "@/constants/colors";
-
-function formatCurrency(amount: number) {
-  return `₹${Number(amount || 0).toLocaleString("en-IN")}`;
-}
+import { formatCurrencyINR } from "@/lib/formatters";
 
 interface Props {
   todayExpense: number;
@@ -18,7 +15,7 @@ export default function StatCardsRow({
     <View style={styles.statsRow}>
       <View style={styles.statCard}>
         <Text style={styles.statLabel}>Today</Text>
-        <Text style={styles.statValue}>{formatCurrency(todayExpense)}</Text>
+        <Text style={styles.statValue}>{formatCurrencyINR(todayExpense)}</Text>
       </View>
 
       <View style={styles.statCard}>

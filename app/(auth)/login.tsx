@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import {
   View,
@@ -9,7 +7,6 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   ScrollView,
 } from "react-native";
 import {
@@ -32,27 +29,29 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function clearError() {
+    if (error) setError("");
+  }
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Missing fields", "Please enter email and password.");
+      setError("Please enter your email and password.");
       return;
     }
 
     try {
       setLoading(true);
+      setError("");
 
-      const data = await loginUser({
-        email: email.trim(),
-        password,
-      });
-
+      const data = await loginUser({ email: email.trim(), password });
       await saveAuth(data);
       router.replace("/home" as Href);
-    } catch (error) {
+    } catch (err) {
       const message =
-        error instanceof Error ? error.message : "Something went wrong";
-      Alert.alert("Login failed", message);
+        err instanceof Error ? err.message : "Invalid credentials. Please try again.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -80,35 +79,41 @@ export default function LoginScreen() {
             keyboardVerticalOffset={20}
           >
             <FadeIn>
+              {/* ── Header ───────────────────────────────────────── */}
               <View style={styles.topSection}>
-                <LinearGradient
-                  colors={["rgba(45,212,191,0.18)", "rgba(59,130,246,0.10)"]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.badge}
-                >
-                  <View style={styles.badgeGlow} />
-                  <Text style={styles.brand}>Finsight Pro</Text>
-                  <Text style={styles.badgeArrow}>→</Text>
-                </LinearGradient>
+                <View style={styles.logoRow}>
+                  <LinearGradient
+                    colors={[Colors.primary, Colors.accentViolet]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.logoDot}
+                  />
+                  <Text style={styles.brand}>FINSIGHT</Text>
+                </View>
 
                 <Text style={styles.title}>Welcome back</Text>
                 <Text style={styles.subtitle}>
-                  Sign in to manage your expenses, track insights, and scan
-                  receipts with a premium, seamless workflow.
+                  Sign in to your financial dashboard
                 </Text>
               </View>
 
+              {/* ── Form card ────────────────────────────────────── */}
               <View style={styles.card}>
-                <View style={styles.cardGlow} />
+
+                {/* Inline error */}
+                {error ? (
+                  <View style={styles.errorBox}>
+                    <Text style={styles.errorText}>⚠ {error}</Text>
+                  </View>
+                ) : null}
 
                 <View style={styles.inputGroup}>
                   <Text style={styles.label}>Email</Text>
                   <TextInput
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(v) => { setEmail(v); clearError(); }}
                     placeholder="Enter your email"
-                    placeholderTextColor={Colors.mutedText}
+                    placeholderTextColor={Colors.dimText}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     style={styles.input}
@@ -120,9 +125,9 @@ export default function LoginScreen() {
                   <Text style={styles.label}>Password</Text>
                   <TextInput
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(v) => { setPassword(v); clearError(); }}
                     placeholder="Enter your password"
-                    placeholderTextColor={Colors.mutedText}
+                    placeholderTextColor={Colors.dimText}
                     secureTextEntry
                     style={styles.input}
                     {...darkInputProps}
@@ -139,7 +144,7 @@ export default function LoginScreen() {
                   disabled={loading}
                 >
                   <LinearGradient
-                    colors={[Colors.primary, Colors.accentTeal || Colors.primary]}
+                    colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.button}
@@ -151,12 +156,8 @@ export default function LoginScreen() {
                 </Pressable>
 
                 <View style={styles.footerRow}>
-                  <Text style={styles.footerText}>
-                    Don&apos;t have an account?
-                  </Text>
-                  <Link href={"/signup" as Href} style={styles.link}>
-                    Sign Up
-                  </Link>
+                  <Text style={styles.footerText}>Don&apos;t have an account?</Text>
+                  <Link href={"/signup" as Href} style={styles.link}>Sign Up</Link>
                 </View>
               </View>
             </FadeIn>
@@ -176,93 +177,78 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background,
   },
-  scroll: {
-    flex: 1,
-  },
+  scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: 22,
   },
 
+  // ── Header ─────────────────────────────────────────────────────────────
   topSection: {
-    marginBottom: 30,
+    marginBottom: 32,
   },
-  badge: {
-    alignSelf: "flex-start",
-    minHeight: 50,
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    overflow: "hidden",
+  logoRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 22,
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
+    gap: 8,
+    marginBottom: 24,
   },
-  badgeGlow: {
-    position: "absolute",
-    top: -30,
-    right: -24,
-    width: 120,
-    height: 120,
+  logoDot: {
+    width: 10,
+    height: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(45,212,191,0.18)",
   },
   brand: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
-    color: Colors.text,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-  },
-  badgeArrow: {
-    marginLeft: 10,
-    fontSize: 18,
-    fontWeight: "700",
     color: Colors.primary,
+    letterSpacing: 2.5,
   },
-
   title: {
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 34,
     fontWeight: "800",
     color: Colors.text,
-    marginBottom: 10,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    lineHeight: 24,
     color: Colors.mutedText,
+    lineHeight: 22,
   },
 
+  // ── Card ───────────────────────────────────────────────────────────────
   card: {
     backgroundColor: Colors.card,
     borderRadius: 24,
     padding: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    shadowColor: "#020617",
-    shadowOffset: { width: 0, height: 18 },
-    shadowOpacity: 0.28,
+    borderColor: Colors.border,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
     shadowRadius: 24,
     elevation: 8,
-    overflow: "hidden",
-  },
-  cardGlow: {
-    position: "absolute",
-    top: -40,
-    right: -30,
-    width: 140,
-    height: 140,
-    borderRadius: 999,
-    backgroundColor: "rgba(59,130,246,0.10)",
   },
 
-  inputGroup: {
+  // ── Inline error ───────────────────────────────────────────────────────
+  errorBox: {
+    backgroundColor: Colors.errorSurface,
+    borderWidth: 1,
+    borderColor: Colors.errorBorder,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     marginBottom: 16,
   },
+  errorText: {
+    color: Colors.errorText,
+    fontSize: 13,
+    fontWeight: "600",
+    lineHeight: 18,
+  },
+
+  // ── Inputs ────────────────────────────────────────────────────────────
+  inputGroup: { marginBottom: 16 },
   label: {
     fontSize: 13,
     fontWeight: "700",
@@ -272,7 +258,7 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.border,
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 16,
@@ -281,46 +267,40 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.inputSurface,
   },
 
+  // ── Button ────────────────────────────────────────────────────────────
   buttonWrap: {
     marginTop: 8,
     borderRadius: 16,
     overflow: "hidden",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.38,
+    shadowRadius: 14,
+    elevation: 7,
   },
   button: {
     minHeight: 54,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 18,
   },
-  buttonDisabled: {
-    opacity: 0.72,
-  },
-  buttonPressed: {
-    transform: [{ scale: 0.985 }],
-    opacity: 0.94,
-  },
+  buttonDisabled: { opacity: 0.65 },
+  buttonPressed: { opacity: 0.88, transform: [{ scale: 0.985 }] },
   buttonText: {
-    color: "#fff",
+    color: "#0A0C10",
     fontSize: 15,
     fontWeight: "800",
-    letterSpacing: 0.2,
+    letterSpacing: 0.3,
   },
 
+  // ── Footer ────────────────────────────────────────────────────────────
   footerRow: {
-    marginTop: 18,
+    marginTop: 20,
     flexDirection: "row",
     justifyContent: "center",
     gap: 6,
     flexWrap: "wrap",
   },
-  footerText: {
-    color: Colors.mutedText,
-    fontSize: 14,
-  },
-  link: {
-    color: Colors.primary,
-    fontSize: 14,
-    fontWeight: "800",
-  },
+  footerText: { color: Colors.mutedText, fontSize: 14 },
+  link: { color: Colors.primary, fontSize: 14, fontWeight: "800" },
 });

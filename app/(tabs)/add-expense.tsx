@@ -32,6 +32,15 @@ function getTodayDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Validates YYYY-MM-DD and checks the date is real (e.g. rejects 2025-02-30)
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(value);
+  return (
+    !isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value
+  );
+}
+
 export default function AddExpenseScreen() {
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -52,6 +61,11 @@ export default function AddExpenseScreen() {
       return;
     }
 
+    if (!isValidDate(date)) {
+      Alert.alert("Invalid date", "Please enter a valid date in YYYY-MM-DD format (e.g. 2026-03-20).");
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -69,7 +83,7 @@ export default function AddExpenseScreen() {
       setCategory("Food");
       setDate(getTodayDate());
 
-      router.replace("/home");
+      router.back();
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to create expense";
@@ -175,19 +189,19 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "700",
-    color: "#E6EEFF",
+    color: Colors.text,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#8FA2CC",
+    color: Colors.mutedText,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: "rgba(15, 23, 42, 0.62)",
+    backgroundColor: Colors.card,
     borderWidth: 1,
-    borderColor: "rgba(125, 147, 188, 0.24)",
+    borderColor: Colors.border,
     borderRadius: 20,
     padding: 16,
     shadowColor: "#020617",
@@ -202,18 +216,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#E6EEFF",
+    color: Colors.text,
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: "rgba(125, 147, 188, 0.28)",
+    borderColor: Colors.border,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 14,
     fontSize: 15,
-    color: "#EAF1FF",
-    backgroundColor: "rgba(15, 23, 42, 0.85)",
+    color: Colors.text,
+    backgroundColor: Colors.inputSurface,
   },
   categoryWrap: {
     flexDirection: "row",
@@ -222,8 +236,8 @@ const styles = StyleSheet.create({
   },
   categoryChip: {
     borderWidth: 1,
-    borderColor: "rgba(125, 147, 188, 0.28)",
-    backgroundColor: "rgba(15, 23, 42, 0.7)",
+    borderColor: Colors.border,
+    backgroundColor: Colors.card,
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 999,
@@ -233,7 +247,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.primary,
   },
   categoryChipText: {
-    color: "#E6EEFF",
+    color: Colors.text,
     fontSize: 13,
     fontWeight: "600",
   },

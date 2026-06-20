@@ -29,6 +29,7 @@ export default function ScreenContainer({
         style={styles.screen}
         contentContainerStyle={[styles.container, contentContainerStyle]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         {body}
       </ScrollView>

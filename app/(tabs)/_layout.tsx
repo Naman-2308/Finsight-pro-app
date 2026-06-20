@@ -27,8 +27,8 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: "#93C5FD",
-        tabBarInactiveTintColor: "#64748B",
+        tabBarActiveTintColor: Colors.accentTeal,
+        tabBarInactiveTintColor: Colors.dimText,
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
         tabBarButton: (props) => (
@@ -38,7 +38,7 @@ export default function TabsLayout() {
           />
         ),
         tabBarStyle: {
-          backgroundColor: "#0B1120",
+          backgroundColor: Colors.background,
           borderTopColor: Colors.border,
           borderTopWidth: 1,
         },
@@ -105,6 +105,13 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => (
             <User color={color} size={TAB_ICON_SIZE} />
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="copilot"
+        options={{
+          href: null,
         }}
       />
 

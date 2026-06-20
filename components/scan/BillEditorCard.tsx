@@ -36,11 +36,11 @@ const CATEGORY_OPTIONS = [
 type Props = {
   bill: ScannedBill;
   billIndex: number;
-  onChangeBillField: (field: keyof ScannedBill, value: any) => void;
+  onChangeBillField: (field: keyof ScannedBill, value: ScannedBill[keyof ScannedBill]) => void;
   onChangeItemField: (
     itemIndex: number,
     field: keyof ScannedItem,
-    value: any
+    value: ScannedItem[keyof ScannedItem]
   ) => void;
 };
 

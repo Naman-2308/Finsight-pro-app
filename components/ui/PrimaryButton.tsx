@@ -1,4 +1,5 @@
 import { Pressable, Text, StyleSheet, Platform } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import { Colors } from "@/constants/colors";
 import { Radius } from "@/constants/radius";
@@ -18,7 +19,7 @@ export default function PrimaryButton({
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.button,
+        styles.wrap,
         disabled && styles.disabled,
         pressed && !disabled && styles.pressed,
       ]}
@@ -32,37 +33,46 @@ export default function PrimaryButton({
       }}
       disabled={disabled}
     >
-      <Text style={styles.text}>{title}</Text>
+      <LinearGradient
+        colors={[Colors.primaryLight, Colors.primary, Colors.primaryDark]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradient}
+      >
+        <Text style={styles.text}>{title}</Text>
+      </LinearGradient>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  button: {
-    backgroundColor: Colors.primary,
+  wrap: {
     borderRadius: Radius.button,
-    paddingVertical: Spacing.sm,
-    alignItems: "center",
-    shadowColor: Colors.primaryDark,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 6,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
+    overflow: "hidden",
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.38,
+    shadowRadius: 14,
+    elevation: 7,
   },
   disabled: {
-    opacity: 0.65,
-    shadowOpacity: 0.1,
+    opacity: 0.55,
+    shadowOpacity: 0.06,
     elevation: 2,
   },
   pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.98 }],
+    opacity: 0.88,
+    transform: [{ scale: 0.985 }],
+  },
+  gradient: {
+    paddingVertical: Spacing.sm + 2,
+    alignItems: "center",
+    justifyContent: "center",
   },
   text: {
-    color: "#fff",
+    color: "#0A0C10",       // dark text on bright emerald — max contrast
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "800",
+    letterSpacing: 0.3,
   },
 });
